@@ -1,0 +1,95 @@
+blueprint:
+  name: DJ Automatique YouTube Music Player (Fade-in 4s + Shuffle)
+  description: |
+    Joue 2-3 morceaux de YouTube Music, change automatiquement de playlist aléatoirement, shuffle activé, fade-in volume sur 4 secondes, playlist de secours en cas de problème.
+  domain: automation
+  input:
+    media_player_target:
+      name: Media Player YTube
+      selector:
+        entity:
+          domain: media_player
+    min_tracks:
+      name: Nombre minimum de morceaux
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 5
+    max_tracks:
+      name: Nombre maximum de morceaux
+      default: 3
+      selector:
+        number:
+          min: 2
+          max: 6
+
+variables:
+  playlists:
+    - "PLmmkrTbQSdHRmvGbIyqncmsrQCceVNoTv"
+    - "PLmmkrTbQSdHS2A7wOEY3fYYi-vJr8D7dy"
+    - "PLmmkrTbQSdHS2A7wOEY3fYYi-vJr8D7dy"
+    - "PLmmkrTbQSdHSH7oqH6gwe3qznGc-SjvHT"
+    - "PLmmkrTbQSdHQbS5GwYCK2mcCl6YfM6bpJ"
+    - "PLmmkrTbQSdHR13NwINBQOhRxMc2V47qxV"
+    - "PLmmkrTbQSdHSak0Gc8rv1DgKkARe96Xr3"
+    - "PLmmkrTbQSdHTP4qObGGVa1tJIG5KIp-sn"
+    - "PLmmkrTbQSdHRn7vGy0Ryg1S12rX11TY22"
+    - "PLmmkrTbQSdHQjJZRXcfqiIw93ZlpRR71T"
+    - "PLmmkrTbQSdHSXqCodLCtLdGe3ebsCaZPm"
+    - "PLmmkrTbQSdHQyLzIs8LL6Rba6NAfp-7Fh"
+  backup_playlist: "PLmmkrTbQSdHRmvGbIyqncmsrQCceVNoTv"
+
+trigger:
+  - platform: state
+    entity_id: !input media_player_target
+    to: 'idle'
+
+action:
+  - variables:
+      next_playlist: "{{ playlists | random }}"
+      track_count: "{{ range(min_tracks, max_tracks + 1) | random }}"
+  - service: media_player.volume_set
+    data:
+      entity_id: !input media_player_target
+      volume_level: 0.1
+  - delay: "00:00:01"
+  - service: media_player.volume_set
+    data:
+      entity_id: !input media_player_target
+      volume_level: 0.3
+  - delay: "00:00:01"
+  - service: media_player.volume_set
+    data:
+      entity_id: !input media_player_target
+      volume_level: 0.5
+  - delay: "00:00:01"
+  - service: media_player.volume_set
+    data:
+      entity_id: !input media_player_target
+      volume_level: 0.7
+  - service: media_player.shuffle_set
+    data:
+      entity_id: !input media_player_target
+      shuffle: true
+  - service: media_player.play_media
+    data:
+      entity_id: !input media_player_target
+      media_content_id: "{{ next_playlist }}"
+      media_content_type: playlist
+  - repeat:
+      count: "{{ track_count }}"
+      sequence:
+        - delay:
+            minutes: 4
+  - service: media_player.media_stop
+    data:
+      entity_id: !input media_player_target
+  - delay: "00:00:05"
+  - service: media_player.play_media
+    data:
+      entity_id: !input media_player_target
+      media_content_id: "{{ backup_playlist }}"
+      media_content_type: playlist
+
+mode: restart

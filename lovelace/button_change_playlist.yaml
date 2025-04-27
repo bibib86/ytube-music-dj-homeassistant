@@ -1,0 +1,8 @@
+type: button
+name: Changer de playlist
+icon: mdi:shuffle-variant
+tap_action:
+  action: call-service
+  service: automation.trigger
+  target:
+    entity_id: automation.dj_automatique_youtube_music_player
